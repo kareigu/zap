@@ -52,11 +52,15 @@ pub fn main() !u8 {
 
     for (args[1..args.len]) |arg| {
         if (arg[0] == '-') {
-            if (std.mem.eql(u8, arg, "-v") or std.mem.eql(u8, arg, "--version")) {
+            var start_flag: u16 = 1;
+            while (start_flag < arg.len and arg[start_flag] == '-') : (start_flag += 1) {}
+
+            const flag = arg[start_flag..arg.len];
+            if (std.mem.eql(u8, flag, "version") or std.mem.eql(u8, flag, "v")) {
                 std.log.info("{}", .{constants.version});
                 return 0;
             }
-            if (std.mem.eql(u8, arg, "-h") or std.mem.eql(u8, arg, "--help")) {
+            if (std.mem.eql(u8, flag, "help") or std.mem.eql(u8, flag, "h")) {
                 std.log.info(help_print, .{constants.version});
                 return 0;
             }
