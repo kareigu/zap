@@ -29,6 +29,14 @@ const Error = error{
     InvalidArgs,
 };
 
+const help_print =
+    \\zat - {}
+    \\
+    \\-- global --
+    \\  -h, --help     -  display this help message
+    \\  -v, --version  -  display program version
+;
+
 pub fn main() !u8 {
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
@@ -46,6 +54,10 @@ pub fn main() !u8 {
         if (arg[0] == '-') {
             if (std.mem.eql(u8, arg, "-v") or std.mem.eql(u8, arg, "--version")) {
                 std.log.info("{}", .{constants.version});
+                return 0;
+            }
+            if (std.mem.eql(u8, arg, "-h") or std.mem.eql(u8, arg, "--help")) {
+                std.log.info(help_print, .{constants.version});
                 return 0;
             }
         }
