@@ -24,11 +24,38 @@ pub fn logFn(
     nosuspend stderr.print(comptime level.asText() ++ ": " ++ format ++ "\n", args) catch return;
 }
 
-pub fn main() !void {
+const Error = error{
+    NoArgs,
+    InvalidArgs,
+};
+
+pub fn main() !u8 {
+    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    defer arena.deinit();
+    const alloc = arena.allocator();
+
+    const args = try std.process.argsAlloc(alloc);
+    defer std.process.argsFree(alloc, args);
+
+    if (args.len <= 1) {
+        std.log.err("no args provided", .{});
+        return @intFromError(Error.NoArgs);
+    }
+
+    for (args[1..args.len]) |arg| {
+        if (arg[0] == '-') {
+            if (std.mem.eql(u8, arg, "-v") or std.mem.eql(u8, arg, "--version")) {
+                std.log.info("{}", .{constants.version});
+                return 0;
+            }
+        }
+
+        std.log.err("invalid argument provided: {s}", .{arg});
+        return @intFromError(Error.InvalidArgs);
+    }
+
     std.log.info("zat {}", .{constants.version});
-    std.log.err("zat", .{});
-    std.log.warn("zat", .{});
-    std.log.debug("zat", .{});
+    return 0;
 }
 
 test "simple test" {
