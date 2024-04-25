@@ -2,6 +2,7 @@ const std = @import("std");
 const constants = @import("constants.zig");
 const Error = constants.Error;
 const io = @import("io.zig");
+const Options = @import("common.zig").Options;
 const error_to_u8 = @import("common.zig").error_to_u8;
 
 pub const std_options = .{
@@ -30,6 +31,8 @@ pub fn logFn(
 const help_print =
     \\zap - {}
     \\
+    \\  -H, --header   -  enable/disable header printing [default: true]
+    \\
     \\-- global --
     \\  -h, --help     -  display this help message
     \\  -v, --version  -  display program version
@@ -56,6 +59,9 @@ pub fn main() !u8 {
         }
     }
 
+    var options = Options{};
+
+    var command_issued = false;
     for (args[1..args.len]) |arg| {
         if (arg[0] == '-') {
             var start_flag: u16 = 1;
@@ -71,6 +77,11 @@ pub fn main() !u8 {
                 return 0;
             }
 
+            if (std.mem.eql(u8, flag, "header") or std.mem.eql(u8, flag, "H")) {
+                options.header = !options.header;
+                continue;
+            }
+
             std.log.err("invalid argument provided: {s}", .{arg});
             return error_to_u8(Error.InvalidArgs);
         }
@@ -79,11 +90,19 @@ pub fn main() !u8 {
         const node = try alloc.create(FileList.Node);
         node.data = arg;
         files.append(node);
+        command_issued = true;
+    }
+
+    if (!command_issued) {
+        std.log.err("no file(s) provided", .{});
+        return error_to_u8(Error.InvalidArgs);
     }
 
     var file = files.first;
     while (file) |f| {
-        std.log.info("{s}", .{f.data});
+        if (options.header) {
+            std.log.info("{s}", .{f.data});
+        }
         const contents = try io.read_to_buffer(alloc, f.data);
         defer alloc.free(contents);
 
