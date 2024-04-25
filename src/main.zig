@@ -30,7 +30,7 @@ const Error = error{
 };
 
 const help_print =
-    \\zat - {}
+    \\zap - {}
     \\
     \\-- global --
     \\  -h, --help     -  display this help message
@@ -70,7 +70,7 @@ pub fn main() !u8 {
         return @intFromError(Error.InvalidArgs);
     }
 
-    std.log.info("zat {}", .{constants.version});
+    std.log.info("zap {}", .{constants.version});
     return 0;
 }
 
