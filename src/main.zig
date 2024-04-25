@@ -84,6 +84,11 @@ pub fn main() !u8 {
     var file = files.first;
     while (file) |f| {
         std.log.info("{s}", .{f.data});
+        const contents = try io.read_to_buffer(alloc, f.data);
+        defer alloc.free(contents);
+
+        std.log.info("{s}", .{contents});
+
         file = f.next;
     }
 
