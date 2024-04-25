@@ -6,3 +6,11 @@ pub const log_level = switch (builtin.mode) {
     .Debug => .debug,
     else => .info,
 };
+
+pub const Error = error{
+    NoArgs,
+    InvalidArgs,
+    FileNotFound,
+    IOError,
+    PermissionDenied,
+};

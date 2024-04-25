@@ -1,5 +1,8 @@
 const std = @import("std");
 const constants = @import("constants.zig");
+const Error = constants.Error;
+const io = @import("io.zig");
+const error_to_u8 = @import("common.zig").error_to_u8;
 
 pub const std_options = .{
     .log_level = constants.log_level,
@@ -24,11 +27,6 @@ pub fn logFn(
     nosuspend stderr.print(comptime level.asText() ++ ": " ++ format ++ "\n", args) catch return;
 }
 
-const Error = error{
-    NoArgs,
-    InvalidArgs,
-};
-
 const help_print =
     \\zap - {}
     \\
@@ -47,7 +45,15 @@ pub fn main() !u8 {
 
     if (args.len <= 1) {
         std.log.err("no args provided", .{});
-        return @intFromError(Error.NoArgs);
+        return error_to_u8(Error.InvalidArgs);
+    }
+
+    const FileList = std.DoublyLinkedList([]const u8);
+    var files = FileList{};
+    defer {
+        while (files.popFirst()) |file| {
+            alloc.destroy(file);
+        }
     }
 
     for (args[1..args.len]) |arg| {
@@ -64,13 +70,23 @@ pub fn main() !u8 {
                 std.log.info(help_print, .{constants.version});
                 return 0;
             }
+
+            std.log.err("invalid argument provided: {s}", .{arg});
+            return error_to_u8(Error.InvalidArgs);
         }
 
-        std.log.err("invalid argument provided: {s}", .{arg});
-        return @intFromError(Error.InvalidArgs);
+        io.is_valid_path(arg) catch |e| return error_to_u8(e);
+        const node = try alloc.create(FileList.Node);
+        node.data = arg;
+        files.append(node);
     }
 
-    std.log.info("zap {}", .{constants.version});
+    var file = files.first;
+    while (file) |f| {
+        std.log.info("{s}", .{f.data});
+        file = f.next;
+    }
+
     return 0;
 }
 
