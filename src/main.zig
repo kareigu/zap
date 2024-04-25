@@ -31,11 +31,12 @@ pub fn logFn(
 const help_print =
     \\zap - {}
     \\
-    \\  -H, --header   -  enable/disable header printing [default: true]
+    \\  -H, --header        -  enable/disable header printing [default: true]
+    \\  -l, --line-numbers  - enable/disable line numbers [default: true]
     \\
     \\-- global --
-    \\  -h, --help     -  display this help message
-    \\  -v, --version  -  display program version
+    \\  -h, --help          -  display this help message
+    \\  -v, --version       -  display program version
 ;
 
 pub fn main() !u8 {
@@ -82,6 +83,11 @@ pub fn main() !u8 {
                 continue;
             }
 
+            if (std.mem.eql(u8, flag, "line-numbers") or std.mem.eql(u8, flag, "l")) {
+                options.line_numbers = !options.line_numbers;
+                continue;
+            }
+
             std.log.err("invalid argument provided: {s}", .{arg});
             return error_to_u8(Error.InvalidArgs);
         }
@@ -106,7 +112,23 @@ pub fn main() !u8 {
         const contents = try io.read_to_buffer(alloc, f.data);
         defer alloc.free(contents);
 
-        std.log.info("{s}", .{contents});
+        var linenr: usize = 1;
+        var line_start: usize = 0;
+        var i: usize = 0;
+        while (i < contents.len) : (i += 1) {
+            if (contents[i] != '\n') {
+                continue;
+            }
+
+            if (options.line_numbers) {
+                std.log.info("{d:>8}│ {s}", .{ linenr, contents[line_start..i] });
+            } else {
+                std.log.info("{s}", .{contents[line_start..i]});
+            }
+
+            line_start = i + 1;
+            linenr += 1;
+        }
 
         file = f.next;
     }
