@@ -1,5 +1,5 @@
 const std = @import("std");
-const Error = @import("constants.zig").Error;
+const ConstantsError = @import("constants.zig").Error;
 
 pub fn read_to_buffer(alloc: std.mem.Allocator, path: []const u8) ![]const u8 {
     const file = try std.fs.cwd().openFile(path, .{});
@@ -25,7 +25,8 @@ fn seek_file_size(file: std.fs.File) !u64 {
     return bytes;
 }
 
-pub fn is_valid_path(path: []const u8) Error!void {
+pub fn is_valid_path(path: []const u8) ConstantsError!void {
+    const Error = ConstantsError;
     std.fs.cwd().access(path, .{}) catch |e| switch (e) {
         error.FileNotFound => {
             std.log.err("file not found: {s}", .{path});
