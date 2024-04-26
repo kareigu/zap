@@ -1,6 +1,36 @@
 const std = @import("std");
 const ConstantsError = @import("constants.zig").Error;
 
+const OUT = std.io.getStdOut().writer();
+
+pub const StdOut = struct {
+    const STDOUT_BUFFER_SIZE = 2 * 1024;
+    const Writer = std.io.BufferedWriter(STDOUT_BUFFER_SIZE, @TypeOf(OUT));
+    pub const Error = Writer.Error;
+
+    writer: Writer = .{ .unbuffered_writer = OUT },
+
+    pub fn init() StdOut {
+        return StdOut{};
+    }
+
+    pub fn write(self: *StdOut, bytes: []const u8) Error!void {
+        const size = try self.writer.write(bytes);
+        if (size != bytes.len) {
+            std.log.err("failed writing line: wrote {d} bytes, expecting {d}", .{ size, bytes.len });
+            return Error.Unexpected;
+        }
+    }
+
+    pub fn write_fmt(self: *StdOut, comptime format: []const u8, args: anytype) !void {
+        try std.fmt.format(self.writer.writer(), format, args);
+    }
+
+    pub fn flush(self: *StdOut) !void {
+        try self.writer.flush();
+    }
+};
+
 pub fn read_to_buffer(alloc: std.mem.Allocator, path: []const u8) ![]const u8 {
     const file = try std.fs.cwd().openFile(path, .{});
     defer file.close();

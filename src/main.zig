@@ -17,13 +17,6 @@ pub fn logFn(
     args: anytype,
 ) void {
     _ = scope;
-
-    if (level == .info) {
-        const stdout = std.io.getStdOut().writer();
-        nosuspend stdout.print(format ++ "\n", args) catch return;
-        return;
-    }
-
     const stderr = std.io.getStdErr().writer();
     nosuspend stderr.print(comptime level.asText() ++ ": " ++ format ++ "\n", args) catch return;
 }
@@ -37,6 +30,7 @@ const help_print =
     \\-- global --
     \\  -h, --help          -  display this help message
     \\  -v, --version       -  display program version
+    \\
 ;
 
 pub fn main() !u8 {
@@ -61,6 +55,8 @@ pub fn main() !u8 {
     }
 
     var options = Options{};
+    var writer = io.StdOut.init();
+    defer writer.flush() catch std.log.err("stdout flush failed", .{});
 
     var command_issued = false;
     for (args[1..args.len]) |arg| {
@@ -70,11 +66,15 @@ pub fn main() !u8 {
 
             const flag = arg[start_flag..arg.len];
             if (std.mem.eql(u8, flag, "version") or std.mem.eql(u8, flag, "v")) {
-                std.log.info("{}", .{constants.version});
+                writer.write_fmt("{}\n", .{constants.version}) catch {
+                    std.log.err("failed writing to stdout", .{});
+                };
                 return 0;
             }
             if (std.mem.eql(u8, flag, "help") or std.mem.eql(u8, flag, "h")) {
-                std.log.info(help_print, .{constants.version});
+                writer.write_fmt(help_print, .{constants.version}) catch {
+                    std.log.err("failed writing to stdout", .{});
+                };
                 return 0;
             }
 
@@ -107,7 +107,9 @@ pub fn main() !u8 {
     var file = files.first;
     while (file) |f| {
         if (options.header) {
-            std.log.info("{s}", .{f.data});
+            writer.write_fmt("{s}\n", .{f.data}) catch {
+                std.log.err("failed writing to stdout", .{});
+            };
         }
         const contents = try io.read_to_buffer(alloc, f.data);
         defer alloc.free(contents);
@@ -120,13 +122,19 @@ pub fn main() !u8 {
                 continue;
             }
 
+            i += 1;
             if (options.line_numbers) {
-                std.log.info("{d:>8}│ {s}", .{ linenr, contents[line_start..i] });
+                writer.write_fmt("{d:>8}│ {s}", .{ linenr, contents[line_start..i] }) catch {
+                    std.log.err("failed writing to stdout", .{});
+                };
             } else {
-                std.log.info("{s}", .{contents[line_start..i]});
+                writer.write(contents[line_start..i]) catch {
+                    std.log.err("failed writing to stdout", .{});
+                };
             }
 
-            line_start = i + 1;
+            line_start = i;
+            i -= 1;
             linenr += 1;
         }
 
