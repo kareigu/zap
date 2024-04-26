@@ -69,12 +69,14 @@ pub fn main() !u8 {
             if (std.mem.eql(u8, flag, "version") or std.mem.eql(u8, flag, "v")) {
                 writer.write_fmt("{}\n", .{constants.version}) catch {
                     std.log.err("failed writing to stdout", .{});
+                    return error_to_u8(Error.IOError);
                 };
                 return 0;
             }
             if (std.mem.eql(u8, flag, "help") or std.mem.eql(u8, flag, "h")) {
                 writer.write_fmt(help_print, .{constants.version}) catch {
                     std.log.err("failed writing to stdout", .{});
+                    return error_to_u8(Error.IOError);
                 };
                 return 0;
             }
@@ -110,6 +112,7 @@ pub fn main() !u8 {
         if (options.header) {
             writer.write_fmt("{s}\n", .{f.data}) catch {
                 std.log.err("failed writing to stdout", .{});
+                return error_to_u8(Error.IOError);
             };
         }
         const contents = try io.read_to_buffer(alloc, f.data);
@@ -145,9 +148,11 @@ pub fn main() !u8 {
             const padding_size = max_padding - common.digit_count(linenr);
             writer.write_padding(padding_size) catch {
                 std.log.err("failed writing to stdout", .{});
+                return error_to_u8(Error.IOError);
             };
             writer.write_fmt("{d}│ {s}", .{ linenr, contents[line_start..i] }) catch {
                 std.log.err("failed writing to stdout", .{});
+                return error_to_u8(Error.IOError);
             };
 
             line_start = i;
