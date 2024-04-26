@@ -109,6 +109,8 @@ pub fn main() !u8 {
 
     var file = files.first;
     while (file) |f| {
+        defer file = f.next;
+
         if (options.header) {
             writer.write_fmt("{s}\n", .{f.data}) catch {
                 std.log.err("failed writing to stdout", .{});
@@ -123,7 +125,7 @@ pub fn main() !u8 {
                 std.log.err("failed writing to stdout", .{});
                 return error_to_u8(Error.IOError);
             };
-            return 0;
+            continue;
         }
 
         var line_count: usize = 0;
@@ -159,8 +161,6 @@ pub fn main() !u8 {
             i -= 1;
             linenr += 1;
         }
-
-        file = f.next;
     }
 
     return 0;
