@@ -115,6 +115,14 @@ pub fn main() !u8 {
         const contents = try io.read_to_buffer(alloc, f.data);
         defer alloc.free(contents);
 
+        if (!options.line_numbers) {
+            writer.write(contents) catch {
+                std.log.err("failed writing to stdout", .{});
+                return error_to_u8(Error.IOError);
+            };
+            return 0;
+        }
+
         var line_count: usize = 0;
         for (contents) |c| {
             if (c == '\n') {
@@ -134,19 +142,13 @@ pub fn main() !u8 {
             }
 
             i += 1;
-            if (options.line_numbers) {
-                const padding_size = max_padding - common.digit_count(linenr);
-                writer.write_padding(padding_size) catch {
-                    std.log.err("failed writing to stdout", .{});
-                };
-                writer.write_fmt("{d}│ {s}", .{ linenr, contents[line_start..i] }) catch {
-                    std.log.err("failed writing to stdout", .{});
-                };
-            } else {
-                writer.write(contents[line_start..i]) catch {
-                    std.log.err("failed writing to stdout", .{});
-                };
-            }
+            const padding_size = max_padding - common.digit_count(linenr);
+            writer.write_padding(padding_size) catch {
+                std.log.err("failed writing to stdout", .{});
+            };
+            writer.write_fmt("{d}│ {s}", .{ linenr, contents[line_start..i] }) catch {
+                std.log.err("failed writing to stdout", .{});
+            };
 
             line_start = i;
             i -= 1;
