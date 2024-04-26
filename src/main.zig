@@ -2,7 +2,8 @@ const std = @import("std");
 const constants = @import("constants.zig");
 const Error = constants.Error;
 const io = @import("io.zig");
-const Options = @import("common.zig").Options;
+const common = @import("common.zig");
+const Options = common.Options;
 const error_to_u8 = @import("common.zig").error_to_u8;
 
 pub const std_options = .{
@@ -114,6 +115,16 @@ pub fn main() !u8 {
         const contents = try io.read_to_buffer(alloc, f.data);
         defer alloc.free(contents);
 
+        var line_count: usize = 0;
+        for (contents) |c| {
+            if (c == '\n') {
+                line_count += 1;
+            }
+        }
+        std.log.debug("line_count: {d}", .{line_count});
+        const max_padding: usize = common.digit_count(line_count);
+        std.log.debug("max_padding: {d}", .{max_padding});
+
         var linenr: usize = 1;
         var line_start: usize = 0;
         var i: usize = 0;
@@ -124,7 +135,11 @@ pub fn main() !u8 {
 
             i += 1;
             if (options.line_numbers) {
-                writer.write_fmt("{d:>8}│ {s}", .{ linenr, contents[line_start..i] }) catch {
+                const padding_size = max_padding - common.digit_count(linenr);
+                writer.write_padding(padding_size) catch {
+                    std.log.err("failed writing to stdout", .{});
+                };
+                writer.write_fmt("{d}│ {s}", .{ linenr, contents[line_start..i] }) catch {
                     std.log.err("failed writing to stdout", .{});
                 };
             } else {

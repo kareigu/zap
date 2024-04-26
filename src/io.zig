@@ -26,6 +26,10 @@ pub const StdOut = struct {
         try std.fmt.format(self.writer.writer(), format, args);
     }
 
+    pub fn write_padding(self: *StdOut, size: usize) !void {
+        try self.writer.writer().writeByteNTimes(' ', size);
+    }
+
     pub fn flush(self: *StdOut) !void {
         try self.writer.flush();
     }
