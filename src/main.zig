@@ -27,6 +27,7 @@ const help_print =
     \\
     \\  -H, --header        -  enable/disable header printing [default: true]
     \\  -l, --line-numbers  - enable/disable line numbers [default: true]
+    \\  -c, --colour        - enable/disable colour [default: true]
     \\
     \\-- global --
     \\  -h, --help          -  display this help message
@@ -91,6 +92,11 @@ pub fn main() !u8 {
                 continue;
             }
 
+            if (std.mem.eql(u8, flag, "colour") or std.mem.eql(u8, flag, "c")) {
+                options.colour = !options.colour;
+                continue;
+            }
+
             std.log.err("invalid argument provided: {s}", .{arg});
             return error_to_u8(Error.InvalidArgs);
         }
@@ -106,6 +112,8 @@ pub fn main() !u8 {
         std.log.err("no file(s) provided", .{});
         return error_to_u8(Error.InvalidArgs);
     }
+
+    writer.colour = options.colour;
 
     var file = files.first;
     while (file) |f| {
@@ -152,7 +160,7 @@ pub fn main() !u8 {
             };
         }
 
-        var linenr: usize = 1;
+        var line_number: usize = 1;
         var line_start: usize = 0;
         var i: usize = 0;
         while (i < contents.len) : (i += 1) {
@@ -161,19 +169,18 @@ pub fn main() !u8 {
             }
 
             i += 1;
-            const padding_size = max_padding - common.digit_count(linenr);
-            writer.write_padding(padding_size) catch {
+            writer.write_line_number(line_number, max_padding) catch {
                 std.log.err("failed writing to stdout", .{});
                 return error_to_u8(Error.IOError);
             };
-            writer.write_fmt("{d}│ {s}", .{ linenr, contents[line_start..i] }) catch {
+            writer.write(contents[line_start..i]) catch {
                 std.log.err("failed writing to stdout", .{});
                 return error_to_u8(Error.IOError);
             };
 
             line_start = i;
             i -= 1;
-            linenr += 1;
+            line_number += 1;
         }
 
         if (options.header or options.line_numbers) {

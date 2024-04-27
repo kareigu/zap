@@ -14,3 +14,9 @@ pub const Error = error{
     IOError,
     PermissionDenied,
 };
+
+pub const Colour = enum {
+    Default,
+    LineNumber,
+    Header,
+};

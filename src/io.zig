@@ -1,5 +1,8 @@
 const std = @import("std");
-const ConstantsError = @import("constants.zig").Error;
+const constants = @import("constants.zig");
+const ConstantsError = constants.Error;
+const Colour = constants.Colour;
+const common = @import("common.zig");
 
 const OUT = std.io.getStdOut().writer();
 
@@ -9,6 +12,7 @@ pub const StdOut = struct {
     pub const Error = Writer.Error;
 
     writer: Writer = .{ .unbuffered_writer = OUT },
+    colour: bool = true,
 
     pub fn init() StdOut {
         return StdOut{};
@@ -44,8 +48,10 @@ pub const StdOut = struct {
         const underline_length = bytes.len * 4 / 3;
 
         if (s.fields.len == 0) {
+            try self.start_colour(Colour.Header);
             try self.write(bytes);
             try self.write_u8('\n');
+            try self.end_colour();
             try self.writer.writer().writeBytesNTimes("─", underline_length);
             try self.write_u8('\n');
             return;
@@ -61,12 +67,23 @@ pub const StdOut = struct {
         };
 
         try self.write_padding(padding_amount);
+        try self.start_colour(Colour.Header);
         try self.write(bytes);
         try self.write_u8('\n');
+        try self.end_colour();
         try self.write_padding(padding_amount - 1);
         try self.write("╭");
         try self.writer.writer().writeBytesNTimes("─", underline_length);
         try self.write_u8('\n');
+    }
+
+    pub fn write_line_number(self: *StdOut, line_number: usize, max_padding: usize) !void {
+        const padding_size = max_padding - common.digit_count(line_number);
+        try self.write_padding(padding_size);
+        try self.start_colour(constants.Colour.LineNumber);
+        try self.write_fmt("{d}", .{line_number});
+        try self.end_colour();
+        try self.write("│ ");
     }
 
     pub fn write_separator(self: *StdOut, header_length: usize, padding: anytype) !void {
@@ -96,6 +113,22 @@ pub const StdOut = struct {
         try self.write("╰");
         try self.writer.writer().writeBytesNTimes("─", underline_length);
         try self.write_u8('\n');
+    }
+
+    pub inline fn start_colour(self: *StdOut, comptime colour: Colour) !void {
+        if (!self.colour) {
+            return;
+        }
+        const seg = switch (colour) {
+            .Default => "\x1b[0m",
+            .LineNumber => "\x1b[32m",
+            .Header => "\x1b[36m",
+        };
+        try self.write(seg);
+    }
+
+    pub inline fn end_colour(self: *StdOut) !void {
+        try self.start_colour(Colour.Default);
     }
 
     pub fn flush(self: *StdOut) !void {

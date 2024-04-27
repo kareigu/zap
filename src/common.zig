@@ -7,6 +7,7 @@ pub fn error_to_u8(err: constants.Error) u8 {
 pub const Options = packed struct {
     header: bool = true,
     line_numbers: bool = true,
+    colour: bool = true,
 };
 
 pub inline fn digit_count(n: usize) usize {
