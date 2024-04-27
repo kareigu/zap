@@ -26,8 +26,47 @@ pub const StdOut = struct {
         try std.fmt.format(self.writer.writer(), format, args);
     }
 
+    pub fn write_u8(self: *StdOut, byte: u8) !void {
+        try self.writer.writer().writeByte(byte);
+    }
+
     pub fn write_padding(self: *StdOut, size: usize) !void {
         try self.writer.writer().writeByteNTimes(' ', size);
+    }
+
+    pub fn write_header(self: *StdOut, bytes: []const u8, padding: anytype) !void {
+        const padding_type = @typeInfo(@TypeOf(padding));
+        const s = switch (padding_type) {
+            .Struct => padding_type.Struct,
+            else => @compileError("padding needs to be struct containing padding amount"),
+        };
+
+        const underline_length = bytes.len * 4 / 3;
+
+        if (s.fields.len == 0) {
+            try self.write(bytes);
+            try self.write_u8('\n');
+            try self.writer.writer().writeBytesNTimes("─", underline_length);
+            try self.write_u8('\n');
+            return;
+        }
+
+        if (s.fields.len > 1) {
+            @compileError("too many values provided");
+        }
+
+        const padding_amount = switch (s.fields[0].type) {
+            usize => padding[0],
+            else => @compileError("invalid type provided"),
+        };
+
+        try self.write_padding(padding_amount);
+        try self.write(bytes);
+        try self.write_u8('\n');
+        try self.write_padding(padding_amount - 1);
+        try self.write("╭");
+        try self.writer.writer().writeBytesNTimes("─", underline_length);
+        try self.write_u8('\n');
     }
 
     pub fn flush(self: *StdOut) !void {

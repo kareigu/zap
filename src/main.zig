@@ -116,7 +116,7 @@ pub fn main() !u8 {
 
         if (!options.line_numbers) {
             if (options.header) {
-                writer.write_fmt("{s}\n", .{f.data}) catch {
+                writer.write_header(f.data, .{}) catch {
                     std.log.err("failed writing to stdout", .{});
                     return error_to_u8(Error.IOError);
                 };
@@ -139,11 +139,7 @@ pub fn main() !u8 {
         std.log.debug("max_padding: {d}", .{max_padding});
 
         if (options.header) {
-            writer.write_padding(max_padding + 1) catch {
-                std.log.err("failed writing to stdout", .{});
-                return error_to_u8(Error.IOError);
-            };
-            writer.write_fmt("{s}\n", .{f.data}) catch {
+            writer.write_header(f.data, .{max_padding + 1}) catch {
                 std.log.err("failed writing to stdout", .{});
                 return error_to_u8(Error.IOError);
             };
