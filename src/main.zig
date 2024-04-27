@@ -125,6 +125,13 @@ pub fn main() !u8 {
                 std.log.err("failed writing to stdout", .{});
                 return error_to_u8(Error.IOError);
             };
+
+            if (options.header) {
+                writer.write_separator(f.data.len, .{}) catch {
+                    std.log.err("failed writing to stdout", .{});
+                    return error_to_u8(Error.IOError);
+                };
+            }
             continue;
         }
 
@@ -167,6 +174,13 @@ pub fn main() !u8 {
             line_start = i;
             i -= 1;
             linenr += 1;
+        }
+
+        if (options.header or options.line_numbers) {
+            writer.write_separator(f.data.len, .{max_padding}) catch {
+                std.log.err("failed writing to stdout", .{});
+                return error_to_u8(Error.IOError);
+            };
         }
     }
 

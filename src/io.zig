@@ -69,6 +69,35 @@ pub const StdOut = struct {
         try self.write_u8('\n');
     }
 
+    pub fn write_separator(self: *StdOut, header_length: usize, padding: anytype) !void {
+        const padding_type = @typeInfo(@TypeOf(padding));
+        const s = switch (padding_type) {
+            .Struct => padding_type.Struct,
+            else => @compileError("padding needs to be struct containing padding amount"),
+        };
+
+        const underline_length = header_length * 4 / 3;
+
+        if (s.fields.len == 0) {
+            try self.writer.writer().writeBytesNTimes("─", underline_length);
+            try self.write_u8('\n');
+            return;
+        }
+
+        if (s.fields.len > 1) {
+            @compileError("too many values provided");
+        }
+
+        const padding_amount = switch (s.fields[0].type) {
+            usize => padding[0],
+            else => @compileError("invalid type provided"),
+        };
+        try self.write_padding(padding_amount);
+        try self.write("╰");
+        try self.writer.writer().writeBytesNTimes("─", underline_length);
+        try self.write_u8('\n');
+    }
+
     pub fn flush(self: *StdOut) !void {
         try self.writer.flush();
     }
