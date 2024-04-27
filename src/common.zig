@@ -11,5 +11,8 @@ pub const Options = packed struct {
 };
 
 pub inline fn digit_count(n: usize) usize {
+    if (n == 0) {
+        return 0;
+    }
     return @intFromFloat(@floor(@log10(@as(f64, @floatFromInt(n))) + 1.0));
 }
