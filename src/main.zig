@@ -111,16 +111,16 @@ pub fn main() !u8 {
     while (file) |f| {
         defer file = f.next;
 
-        if (options.header) {
-            writer.write_fmt("{s}\n", .{f.data}) catch {
-                std.log.err("failed writing to stdout", .{});
-                return error_to_u8(Error.IOError);
-            };
-        }
         const contents = try io.read_to_buffer(alloc, f.data);
         defer alloc.free(contents);
 
         if (!options.line_numbers) {
+            if (options.header) {
+                writer.write_fmt("{s}\n", .{f.data}) catch {
+                    std.log.err("failed writing to stdout", .{});
+                    return error_to_u8(Error.IOError);
+                };
+            }
             writer.write(contents) catch {
                 std.log.err("failed writing to stdout", .{});
                 return error_to_u8(Error.IOError);
@@ -137,6 +137,17 @@ pub fn main() !u8 {
         std.log.debug("line_count: {d}", .{line_count});
         const max_padding: usize = common.digit_count(line_count);
         std.log.debug("max_padding: {d}", .{max_padding});
+
+        if (options.header) {
+            writer.write_padding(max_padding + 1) catch {
+                std.log.err("failed writing to stdout", .{});
+                return error_to_u8(Error.IOError);
+            };
+            writer.write_fmt("{s}\n", .{f.data}) catch {
+                std.log.err("failed writing to stdout", .{});
+                return error_to_u8(Error.IOError);
+            };
+        }
 
         var linenr: usize = 1;
         var line_start: usize = 0;
