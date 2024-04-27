@@ -38,43 +38,49 @@ pub const StdOut = struct {
         try self.writer.writer().writeByteNTimes(' ', size);
     }
 
-    pub fn write_header(self: *StdOut, bytes: []const u8, padding: anytype) !void {
+    fn get_padding(padding: anytype) ?usize {
         const padding_type = @typeInfo(@TypeOf(padding));
         const s = switch (padding_type) {
             .Struct => padding_type.Struct,
             else => @compileError("padding needs to be struct containing padding amount"),
         };
 
-        const underline_length = bytes.len * 4 / 3;
-
         if (s.fields.len == 0) {
-            try self.start_colour(Colour.Header);
-            try self.write(bytes);
-            try self.write_u8('\n');
-            try self.end_colour();
-            try self.writer.writer().writeBytesNTimes("─", underline_length);
-            try self.write_u8('\n');
-            return;
+            return null;
         }
 
         if (s.fields.len > 1) {
             @compileError("too many values provided");
         }
 
-        const padding_amount = switch (s.fields[0].type) {
+        return switch (s.fields[0].type) {
             usize => padding[0],
             else => @compileError("invalid type provided"),
         };
+    }
 
-        try self.write_padding(padding_amount);
-        try self.start_colour(Colour.Header);
-        try self.write(bytes);
-        try self.write_u8('\n');
-        try self.end_colour();
-        try self.write_padding(padding_amount - 1);
-        try self.write("╭");
-        try self.writer.writer().writeBytesNTimes("─", underline_length);
-        try self.write_u8('\n');
+    pub fn write_header(self: *StdOut, bytes: []const u8, padding: anytype) !void {
+        const padding_amount = get_padding(padding);
+        const underline_length = bytes.len * 4 / 3;
+
+        if (padding_amount) |p| {
+            try self.write_padding(p);
+            try self.start_colour(Colour.Header);
+            try self.write(bytes);
+            try self.write_u8('\n');
+            try self.end_colour();
+            try self.write_padding(p - 1);
+            try self.write("╭");
+            try self.writer.writer().writeBytesNTimes("─", underline_length);
+            try self.write_u8('\n');
+        } else {
+            try self.start_colour(Colour.Header);
+            try self.write(bytes);
+            try self.write_u8('\n');
+            try self.end_colour();
+            try self.writer.writer().writeBytesNTimes("─", underline_length);
+            try self.write_u8('\n');
+        }
     }
 
     pub fn write_line_number(self: *StdOut, line_number: usize, max_padding: usize) !void {
@@ -87,32 +93,18 @@ pub const StdOut = struct {
     }
 
     pub fn write_separator(self: *StdOut, header_length: usize, padding: anytype) !void {
-        const padding_type = @typeInfo(@TypeOf(padding));
-        const s = switch (padding_type) {
-            .Struct => padding_type.Struct,
-            else => @compileError("padding needs to be struct containing padding amount"),
-        };
-
+        const padding_amount = get_padding(padding);
         const underline_length = header_length * 4 / 3;
 
-        if (s.fields.len == 0) {
+        if (padding_amount) |p| {
+            try self.write_padding(p);
+            try self.write("╰");
             try self.writer.writer().writeBytesNTimes("─", underline_length);
             try self.write_u8('\n');
-            return;
+        } else {
+            try self.writer.writer().writeBytesNTimes("─", underline_length);
+            try self.write_u8('\n');
         }
-
-        if (s.fields.len > 1) {
-            @compileError("too many values provided");
-        }
-
-        const padding_amount = switch (s.fields[0].type) {
-            usize => padding[0],
-            else => @compileError("invalid type provided"),
-        };
-        try self.write_padding(padding_amount);
-        try self.write("╰");
-        try self.writer.writer().writeBytesNTimes("─", underline_length);
-        try self.write_u8('\n');
     }
 
     pub inline fn start_colour(self: *StdOut, comptime colour: Colour) !void {
