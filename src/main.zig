@@ -57,7 +57,7 @@ pub fn main() !u8 {
     }
 
     var options = Options{};
-    var writer = io.StdOut.init();
+    var writer = io.StdOut.init(&options);
     defer writer.flush() catch std.log.err("stdout flush failed", .{});
 
     var command_issued = false;
@@ -112,8 +112,6 @@ pub fn main() !u8 {
         std.log.err("no file(s) provided", .{});
         return error_to_u8(Error.InvalidArgs);
     }
-
-    writer.colour = options.colour;
 
     var file = files.first;
     while (file) |f| {

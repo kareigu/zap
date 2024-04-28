@@ -12,10 +12,10 @@ pub const StdOut = struct {
     pub const Error = Writer.Error;
 
     writer: Writer = .{ .unbuffered_writer = OUT },
-    colour: bool = true,
+    options: *common.Options,
 
-    pub fn init() StdOut {
-        return StdOut{};
+    pub fn init(options: *common.Options) StdOut {
+        return StdOut{ .options = options };
     }
 
     pub fn write(self: *StdOut, bytes: []const u8) Error!void {
@@ -108,7 +108,7 @@ pub const StdOut = struct {
     }
 
     pub inline fn start_colour(self: *StdOut, comptime colour: Colour) !void {
-        if (!self.colour) {
+        if (!self.options.colour) {
             return;
         }
         const seg = switch (colour) {
