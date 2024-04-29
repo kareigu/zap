@@ -12,7 +12,7 @@ pub fn build(b: *std.Build) !void {
     });
     const constants = b.addOptions();
 
-    const version = std.SemanticVersion{ .major = 0, .minor = 0, .patch = 1 };
+    const version = std.SemanticVersion{ .major = 0, .minor = 1, .patch = 0 };
     constants.addOption(std.SemanticVersion, "version", version);
 
     exe.root_module.addOptions("compile_constants", constants);
