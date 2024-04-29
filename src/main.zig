@@ -113,6 +113,8 @@ pub fn main() !u8 {
         return error_to_u8(Error.InvalidArgs);
     }
 
+    writer.update_options();
+
     var file = files.first;
     while (file) |f| {
         defer file = f.next;

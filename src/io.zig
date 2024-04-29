@@ -4,18 +4,30 @@ const ConstantsError = constants.Error;
 const Colour = constants.Colour;
 const common = @import("common.zig");
 
-const OUT = std.io.getStdOut().writer();
+const OUT = std.io.getStdOut();
+const OUT_WRITER = OUT.writer();
 
 pub const StdOut = struct {
     const STDOUT_BUFFER_SIZE = 2 * 1024;
-    const Writer = std.io.BufferedWriter(STDOUT_BUFFER_SIZE, @TypeOf(OUT));
+    const Writer = std.io.BufferedWriter(STDOUT_BUFFER_SIZE, @TypeOf(OUT_WRITER));
     pub const Error = Writer.Error;
 
-    writer: Writer = .{ .unbuffered_writer = OUT },
+    writer: Writer = .{ .unbuffered_writer = OUT_WRITER },
     options: *common.Options,
 
     pub fn init(options: *common.Options) StdOut {
         return StdOut{ .options = options };
+    }
+
+    /// Updates options based on if stdout is a tty
+    pub fn update_options(self: *StdOut) void {
+        if (OUT.isTty()) {
+            return;
+        }
+
+        self.options.colour = !self.options.colour;
+        self.options.header = !self.options.header;
+        self.options.line_numbers = !self.options.line_numbers;
     }
 
     pub fn write(self: *StdOut, bytes: []const u8) Error!void {
