@@ -25,9 +25,11 @@ pub fn logFn(
 const help_print =
     \\zap - {}
     \\
-    \\  -H, --header        -  enable/disable header printing [default: true]
-    \\  -l, --line-numbers  - enable/disable line numbers [default: true]
-    \\  -c, --colour        - enable/disable colour [default: true]
+    \\-- format flags --
+    \\  mirrored when stdout is not a tty
+    \\  -H, --header        - disable/enable header printing [default: true]
+    \\  -l, --line-numbers  - disable/enable line numbers [default: true]
+    \\  -c, --colour        - disable/enable colour [default: true]
     \\
     \\-- global --
     \\  -h, --help          -  display this help message
